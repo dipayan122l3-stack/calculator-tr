@@ -357,15 +357,18 @@
     });
   }
 
-  window.copyShareLink = async function(){
-    if(!currentRoom){
-      alert("Create or join a room first!");
-      return;
-    }
-    const link = `${location.origin}${location.pathname}#room=${currentRoom}`;
-    await navigator.clipboard.writeText(link);
-    alert("✅ Share link copied!");
+ window.copyShareLink = async function(){
+  if(!currentRoom){
+    alert("Create or join a room first!");
+    return;
   }
+
+  const textToCopy = `Room Code: ${currentRoom}`;
+
+  await navigator.clipboard.writeText(textToCopy);
+  alert("✅ Room Code copied! Send this to other device.");
+}
+
 
   window.copyFullReport = async function(){
     let report = "";
