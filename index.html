@@ -124,7 +124,11 @@
     <button class="green" onclick="createRoom()">Create New Room</button>
     <input id="roomInput" placeholder="Room Code (example: abc123)" />
     <button class="blue" onclick="joinRoom()">Join Room</button>
-    <button class="orange" onclick="copyShareLink()">Copy Share Link</button>
+
+    <button class="green" onclick="saveRoomManual()">Save</button>
+
+    <!-- ✅ UPDATED BUTTON (works even in file:/// mode) -->
+    <button class="orange" onclick="copyShareLink()">Copy Room Code</button>
   </div>
 
   <div class="smallNote">
@@ -167,11 +171,10 @@
   </div>
 </div>
 
-<!-- ✅ Firebase (CDN) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import {
-    getFirestore, doc, setDoc, getDoc, onSnapshot,
+    getFirestore, doc, setDoc, onSnapshot,
     collection, addDoc, query, orderBy, limit, getDocs
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
@@ -196,7 +199,7 @@
   const historyList = document.getElementById("historyList");
 
   let currentRoom = null;
-  let roomData = {}; // { "00": "12,34", ... }
+  let roomData = {};
   let unsubRoom = null;
 
   function makeRoomCode(){
@@ -251,7 +254,7 @@
       roomData[key] = input.value;
       tdTotal.innerText = lineTotal(input.value);
       calcGrandTotal();
-      await saveRoom(); // auto save online
+      await saveRoom(false); // autosave no alert
     });
 
     tdInput.appendChild(input);
@@ -282,22 +285,34 @@
     calcGrandTotal();
   }
 
-  async function saveRoom(){
+  async function saveRoom(showAlert=true){
     if(!currentRoom) return;
 
     const roomRef = doc(db, "rooms", currentRoom);
+
     await setDoc(roomRef, {
       data: roomData,
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
-    // save history
+    // history
     const total = calcGrandTotal();
     const historyRef = collection(db, "rooms", currentRoom, "history");
     await addDoc(historyRef, {
       time: new Date().toLocaleString(),
       total: total
     });
+
+    if(showAlert) alert("✅ Saved!");
+    loadHistory();
+  }
+
+  window.saveRoomManual = async function(){
+    if(!currentRoom){
+      alert("Create or join a room first!");
+      return;
+    }
+    await saveRoom(true);
   }
 
   async function loadHistory(){
@@ -324,7 +339,7 @@
     currentRoom = makeRoomCode();
     roomInput.value = currentRoom;
     roomData = {};
-    await saveRoom();
+    await saveRoom(false);
     startListening();
     alert("✅ Room created: " + currentRoom);
   }
@@ -335,7 +350,6 @@
       alert("Enter room code!");
       return;
     }
-
     currentRoom = code;
     startListening();
     alert("✅ Joined room: " + currentRoom);
@@ -357,18 +371,18 @@
     });
   }
 
- window.copyShareLink = async function(){
-  if(!currentRoom){
-    alert("Create or join a room first!");
-    return;
+  // ✅ UPDATED COPY FUNCTION (copies only room code)
+  window.copyShareLink = async function(){
+    if(!currentRoom){
+      alert("Create or join a room first!");
+      return;
+    }
+
+    const textToCopy = `Room Code: ${currentRoom}`;
+
+    await navigator.clipboard.writeText(textToCopy);
+    alert("✅ Room Code copied! Send it to another device.");
   }
-
-  const textToCopy = `Room Code: ${currentRoom}`;
-
-  await navigator.clipboard.writeText(textToCopy);
-  alert("✅ Room Code copied! Send this to other device.");
-}
-
 
   window.copyFullReport = async function(){
     let report = "";
@@ -391,17 +405,10 @@
 
   searchBox.addEventListener("input", () => renderTables());
 
-  // ✅ Auto join if URL has room code
-  const hash = new URLSearchParams(location.hash.replace("#",""));
-  const roomFromUrl = hash.get("room");
-  if(roomFromUrl){
-    currentRoom = roomFromUrl;
-    roomInput.value = roomFromUrl;
-    startListening();
-  } else {
-    renderTables();
-  }
+  // start empty
+  renderTables();
 </script>
 
 </body>
 </html>
+
