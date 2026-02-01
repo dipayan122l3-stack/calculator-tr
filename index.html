@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>00-99 Shared Tracker</title>
+  <title>00-99 Multi Number Tracker (2 Column)</title>
 
   <style>
     body{
@@ -11,31 +11,39 @@
       background:#f2f2f2;
       padding:20px;
     }
+
     .container{
-      max-width:1400px;
+      max-width: 1400px;
       margin:auto;
-      background:#fff;
+      background:white;
       padding:20px;
       border-radius:14px;
       box-shadow:0 10px 20px rgba(0,0,0,0.15);
     }
+
     h2{text-align:center;}
+    .hint{
+      text-align:center;
+      font-size:13px;
+      color:#555;
+      margin-bottom:10px;
+    }
+
     .topbar{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       margin:15px 0;
-      align-items:center;
     }
-    input{
+
+    .topbar input{
+      flex:1;
       padding:10px;
       border-radius:10px;
       border:1px solid #ccc;
+      min-width:250px;
     }
-    #searchBox{
-      flex:1;
-      min-width:220px;
-    }
+
     button{
       padding:10px 14px;
       border:none;
@@ -44,38 +52,52 @@
       color:white;
       font-weight:bold;
     }
+
     .blue{background:#007bff;}
     .blue:hover{background:#0056b3;}
-    .green{background:#28a745;}
-    .green:hover{background:#1f7a32;}
-    .orange{background:#fd7e14;}
-    .orange:hover{background:#c85f0e;}
+
     .purple{background:#6f42c1;}
     .purple:hover{background:#4e2d8a;}
 
+    .red{background:#dc3545;}
+    .red:hover{background:#a71d2a;}
+
+    .orange{background:#fd7e14;}
+    .orange:hover{background:#c85f0e;}
+
     .grid{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap:20px;
     }
 
     table{
       width:100%;
       border-collapse:collapse;
+      margin-top:10px;
       font-size:13px;
     }
+
     th, td{
       border:1px solid #ddd;
       padding:6px;
       text-align:center;
     }
-    th{background:#f8f8f8;}
+
+    th{
+      background:#f8f8f8;
+    }
 
     input.listInput{
       width:90%;
       padding:6px;
       border-radius:8px;
       border:1px solid #ccc;
+      font-size:13px;
+    }
+
+    .lineTotal{
+      font-weight:bold;
     }
 
     .totalbox{
@@ -88,345 +110,232 @@
       font-weight:bold;
       text-align:center;
     }
-
-    .smallNote{
-      text-align:center;
-      color:#555;
-      font-size:13px;
-      margin-top:5px;
-    }
-
-    #saveStatus{
-      text-align:center;
-      font-weight:bold;
-      margin-top:8px;
-      color:#0a7;
-    }
-
-    .historyBox{
-      margin-top:20px;
-      background:#fafafa;
-      border:1px solid #ddd;
-      border-radius:12px;
-      padding:10px;
-    }
-
-    .historyItem{
-      background:#fff;
-      border:1px solid #ccc;
-      border-radius:10px;
-      padding:8px;
-      margin-top:10px;
-      font-size:13px;
-      white-space:pre-wrap;
-    }
   </style>
 </head>
 
 <body>
-<div class="container">
-  <h2>✅ 00–99 Shared Multi Number Tracker</h2>
-
-  <div class="topbar">
-    <button class="green" onclick="createRoom()">Create New Room</button>
-    <input id="roomInput" placeholder="Room Code (example: abc123)" />
-    <button class="blue" onclick="joinRoom()">Join Room</button>
-
-    <button class="green" onclick="saveRoomManual()">Save</button>
-    <button class="orange" onclick="copyRoomCode()">Copy Room Code</button>
-  </div>
-
-  <div id="saveStatus"></div>
-
-  <div class="smallNote">
-    ✅ Example: <b>00 = 12,34,54,23</b> (or use +) |
-    Search: <b>00,23,34</b>
-  </div>
-
-  <div class="topbar">
-    <input type="text" id="searchBox" placeholder="Search: 00 OR 00,23,34"/>
-    <button class="purple" onclick="copyFullReport()">Copy Full Report</button>
-  </div>
-
-  <div class="grid">
-    <div>
-      <h3 style="text-align:center;">00 – 49</h3>
-      <table>
-        <thead>
-          <tr><th>Index</th><th>Numbers</th><th>Total</th></tr>
-        </thead>
-        <tbody id="leftBody"></tbody>
-      </table>
+  <div class="container">
+    <h2>✅ 00–99 Multi Number Add + Total (2 Column)</h2>
+    <div class="hint">
+      Example: <b>00 = 12,34,54,23</b> (you can also type: 12+34+54+23)<br/>
+      Multi search: <b>00,23,34</b>
     </div>
 
-    <div>
-      <h3 style="text-align:center;">50 – 99</h3>
-      <table>
-        <thead>
-          <tr><th>Index</th><th>Numbers</th><th>Total</th></tr>
-        </thead>
-        <tbody id="rightBody"></tbody>
-      </table>
+    <div class="topbar">
+      <input type="text" id="searchBox" placeholder="Search: 00 OR 00,23,34"/>
+      <button class="blue" onclick="saveData()">Save</button>
+      <button class="purple" onclick="copyFullReport()">Copy Full Report</button>
+      <button class="orange" onclick="exportData()">Export</button>
+      <button class="red" onclick="resetData()">Reset</button>
     </div>
+
+    <div class="grid">
+      <!-- Left 00-49 -->
+      <div>
+        <h3 style="text-align:center;">00 – 49</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Index</th>
+              <th>Numbers</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="leftBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Right 50-99 -->
+      <div>
+        <h3 style="text-align:center;">50 – 99</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Index</th>
+              <th>Numbers</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="rightBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="totalbox" id="grandTotalBox">Grand Total: 0</div>
   </div>
 
-  <div class="totalbox" id="grandTotalBox">Grand Total: 0</div>
+  <script>
+    const leftBody = document.getElementById("leftBody");
+    const rightBody = document.getElementById("rightBody");
+    const grandTotalBox = document.getElementById("grandTotalBox");
+    const searchBox = document.getElementById("searchBox");
 
-  <div class="historyBox">
-    <h3>📌 History (Online)</h3>
-    <div id="historyList">Join a room to see history...</div>
-  </div>
-</div>
+    let data = {};
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-  import {
-    getFirestore, doc, setDoc, onSnapshot,
-    collection, addDoc, query, orderBy, limit, getDocs,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-  // ✅ PASTE YOUR FIREBASE CONFIG HERE
-  const firebaseConfig = {
-    apiKey: "PASTE_HERE",
-    authDomain: "PASTE_HERE",
-    projectId: "PASTE_HERE",
-    storageBucket: "PASTE_HERE",
-    messagingSenderId: "PASTE_HERE",
-    appId: "PASTE_HERE"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const leftBody = document.getElementById("leftBody");
-  const rightBody = document.getElementById("rightBody");
-  const grandTotalBox = document.getElementById("grandTotalBox");
-  const searchBox = document.getElementById("searchBox");
-  const roomInput = document.getElementById("roomInput");
-  const historyList = document.getElementById("historyList");
-  const saveStatus = document.getElementById("saveStatus");
-
-  let currentRoom = null;
-  let roomData = {};
-  let unsubRoom = null;
-
-  function makeRoomCode(){
-    return Math.random().toString(36).substring(2, 8);
-  }
-
-  function parseLineToNumbers(text){
-    if(!text) return [];
-    const cleaned = text.replace(/\+/g, ",");
-    const parts = cleaned.split(",").map(x=>x.trim()).filter(Boolean);
-    return parts.map(n=>parseInt(n)).filter(n=>!isNaN(n));
-  }
-
-  function lineTotal(text){
-    return parseLineToNumbers(text).reduce((a,b)=>a+b,0);
-  }
-
-  function calcGrandTotal(){
-    let total = 0;
-    for(let i=0;i<100;i++){
-      const key = String(i).padStart(2,"0");
-      total += lineTotal(roomData[key] || "");
-    }
-    grandTotalBox.innerText = "Grand Total: " + total;
-    return total;
-  }
-
-  function parseSearchKeys(searchText){
-    if(!searchText.trim()) return null;
-    let parts = searchText.split(/[,|\s]+/).map(x=>x.trim()).filter(Boolean);
-    parts = parts.map(x=>x.padStart(2,"0")).filter(x=>/^\d{2}$/.test(x));
-    return [...new Set(parts)];
-  }
-
-  function renderRow(key){
-    const tr = document.createElement("tr");
-
-    const tdIndex = document.createElement("td");
-    tdIndex.innerText = key;
-
-    const tdInput = document.createElement("td");
-    const input = document.createElement("input");
-    input.className = "listInput";
-    input.placeholder = "12,34,54,23";
-    input.value = roomData[key] || "";
-
-    const tdTotal = document.createElement("td");
-    tdTotal.style.fontWeight = "bold";
-    tdTotal.innerText = lineTotal(input.value);
-
-    input.addEventListener("input", () => {
-      roomData[key] = input.value;
-      tdTotal.innerText = lineTotal(input.value);
-      calcGrandTotal();
-      // ✅ no autosave here (faster + safer)
-      saveStatus.innerText = "✏️ Edited (click Save)";
-      saveStatus.style.color = "#c85f0e";
-    });
-
-    tdInput.appendChild(input);
-
-    tr.appendChild(tdIndex);
-    tr.appendChild(tdInput);
-    tr.appendChild(tdTotal);
-
-    return tr;
-  }
-
-  function renderTables(){
-    leftBody.innerHTML = "";
-    rightBody.innerHTML = "";
-
-    const searchKeys = parseSearchKeys(searchBox.value);
-
-    for(let i=0;i<100;i++){
-      const key = String(i).padStart(2,"0");
-
-      if(searchKeys && !searchKeys.includes(key)) continue;
-
-      const row = renderRow(key);
-      if(i < 50) leftBody.appendChild(row);
-      else rightBody.appendChild(row);
-    }
-
-    calcGrandTotal();
-  }
-
-  async function saveRoom(showAlert=true){
-    if(!currentRoom) return;
-
-    saveStatus.innerText = "💾 Saving...";
-    saveStatus.style.color = "#007bff";
-
-    const roomRef = doc(db, "rooms", currentRoom);
-
-    await setDoc(roomRef, {
-      data: roomData,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    const total = calcGrandTotal();
-    const historyRef = collection(db, "rooms", currentRoom, "history");
-    await addDoc(historyRef, {
-      createdAt: serverTimestamp(),
-      total: total
-    });
-
-    saveStatus.innerText = "✅ Saved!";
-    saveStatus.style.color = "#0a7";
-
-    if(showAlert) alert("✅ Saved!");
-    loadHistory();
-  }
-
-  window.saveRoomManual = async function(){
-    if(!currentRoom){
-      alert("Create or join a room first!");
-      return;
-    }
-    try{
-      await saveRoom(true);
-    } catch(err){
-      console.error(err);
-      saveStatus.innerText = "❌ Save failed! Check Firebase config / rules.";
-      saveStatus.style.color = "red";
-      alert("Save failed. Open Console (F12) to see error.");
-    }
-  }
-
-  async function loadHistory(){
-    if(!currentRoom) return;
-
-    const q = query(
-      collection(db, "rooms", currentRoom, "history"),
-      orderBy("createdAt", "desc"),
-      limit(10)
-    );
-
-    const snap = await getDocs(q);
-
-    let html = "";
-    snap.forEach(docu => {
-      const h = docu.data();
-      html += `<div class="historyItem">Total: ${h.total}</div>`;
-    });
-
-    historyList.innerHTML = html || "No history yet.";
-  }
-
-  window.createRoom = async function(){
-    currentRoom = makeRoomCode();
-    roomInput.value = currentRoom;
-    roomData = {};
-    startListening();
-    alert("✅ Room created: " + currentRoom);
-  }
-
-  window.joinRoom = async function(){
-    const code = roomInput.value.trim();
-    if(!code){
-      alert("Enter room code!");
-      return;
-    }
-    currentRoom = code;
-    startListening();
-    alert("✅ Joined room: " + currentRoom);
-  }
-
-  function startListening(){
-    if(unsubRoom) unsubRoom();
-
-    const roomRef = doc(db, "rooms", currentRoom);
-
-    unsubRoom = onSnapshot(roomRef, (snap) => {
-      if(snap.exists()){
-        roomData = snap.data().data || {};
-      } else {
-        roomData = {};
+    function loadData(){
+      const saved = localStorage.getItem("multiNumberTracker2col");
+      if(saved){
+        data = JSON.parse(saved);
       }
+    }
+
+    function autoSave(){
+      localStorage.setItem("multiNumberTracker2col", JSON.stringify(data));
+    }
+
+    function saveData(){
+      autoSave();
+      alert("✅ Saved Successfully!");
+    }
+
+    function resetData(){
+      if(!confirm("Reset all entries?")) return;
+      data = {};
+      localStorage.removeItem("multiNumberTracker2col");
       renderTables();
-      loadHistory();
-      saveStatus.innerText = "✅ Loaded room: " + currentRoom;
-      saveStatus.style.color = "#0a7";
-    });
-  }
-
-  window.copyRoomCode = async function(){
-    if(!currentRoom){
-      alert("Create or join a room first!");
-      return;
+      alert("✅ Reset Done!");
     }
-    await navigator.clipboard.writeText(`Room Code: ${currentRoom}`);
-    alert("✅ Room Code copied!");
-  }
 
-  window.copyFullReport = async function(){
-    let report = "";
-    let grand = 0;
+    function parseLineToNumbers(text){
+      if(!text) return [];
+      const cleaned = text.replace(/\+/g, ",");
+      const parts = cleaned.split(",").map(x => x.trim()).filter(x => x !== "");
+      return parts.map(n => parseInt(n)).filter(n => !isNaN(n));
+    }
 
-    for(let i=0;i<100;i++){
-      const key = String(i).padStart(2,"0");
-      const raw = (roomData[key] || "").trim();
-      if(raw){
-        const t = lineTotal(raw);
-        report += `${key} = ${raw} | Total = ${t}\n`;
-        grand += t;
+    function lineTotal(text){
+      return parseLineToNumbers(text).reduce((a,b)=>a+b,0);
+    }
+
+    function calculateGrandTotal(){
+      let total = 0;
+      for(let i=0;i<100;i++){
+        const key = String(i).padStart(2,"0");
+        total += lineTotal(data[key] || "");
+      }
+      grandTotalBox.innerText = "Grand Total: " + total;
+      return total;
+    }
+
+    function exportData(){
+      let txt = "";
+      let grand = 0;
+
+      for(let i=0; i<100; i++){
+        const key = String(i).padStart(2,"0");
+        const raw = (data[key] || "").trim();
+        if(raw){
+          const t = lineTotal(raw);
+          txt += `${key} = ${raw}  | Total = ${t}\n`;
+          grand += t;
+        }
+      }
+
+      txt += `\nGrand Total = ${grand}`;
+
+      const blob = new Blob([txt], {type:"text/plain"});
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "00-99-multi-data.txt";
+      link.click();
+    }
+
+    async function copyFullReport(){
+      let report = "";
+      let grand = 0;
+
+      for(let i=0; i<100; i++){
+        const key = String(i).padStart(2,"0");
+        const raw = (data[key] || "").trim();
+
+        if(raw){
+          const t = lineTotal(raw);
+          report += `${key} = ${raw} | Total = ${t}\n`;
+          grand += t;
+        }
+      }
+
+      report += `\nGrand Total = ${grand}`;
+
+      try{
+        await navigator.clipboard.writeText(report);
+        alert("✅ Full Report Copied!");
+      } catch (err){
+        alert("❌ Copy failed! Your browser may block clipboard.");
       }
     }
 
-    report += `\nGrand Total = ${grand}`;
-    await navigator.clipboard.writeText(report);
-    alert("✅ Full report copied!");
-  }
+    function parseSearchKeys(searchText){
+      if(!searchText.trim()) return null;
 
-  searchBox.addEventListener("input", () => renderTables());
+      let parts = searchText
+        .split(/[,|\s]+/)
+        .map(x => x.trim())
+        .filter(x => x !== "");
 
-  renderTables();
-</script>
+      parts = parts.map(x => x.padStart(2, "0"));
+      parts = parts.filter(x => /^\d{2}$/.test(x));
 
+      return [...new Set(parts)];
+    }
+
+    function renderRow(key){
+      const tr = document.createElement("tr");
+
+      const tdIndex = document.createElement("td");
+      tdIndex.innerText = key;
+
+      const tdInput = document.createElement("td");
+      const input = document.createElement("input");
+      input.className = "listInput";
+      input.placeholder = "12,34,54,23";
+      input.value = data[key] || "";
+
+      const tdTotal = document.createElement("td");
+      tdTotal.className = "lineTotal";
+      tdTotal.innerText = lineTotal(input.value);
+
+      input.addEventListener("input", () => {
+        data[key] = input.value;
+        tdTotal.innerText = lineTotal(input.value);
+        calculateGrandTotal();
+        autoSave();
+      });
+
+      tdInput.appendChild(input);
+
+      tr.appendChild(tdIndex);
+      tr.appendChild(tdInput);
+      tr.appendChild(tdTotal);
+
+      return tr;
+    }
+
+    function renderTables(){
+      leftBody.innerHTML = "";
+      rightBody.innerHTML = "";
+
+      const searchKeys = parseSearchKeys(searchBox.value);
+
+      for(let i=0;i<100;i++){
+        const key = String(i).padStart(2,"0");
+
+        if(searchKeys && !searchKeys.includes(key)) continue;
+
+        const row = renderRow(key);
+        if(i < 50) leftBody.appendChild(row);
+        else rightBody.appendChild(row);
+      }
+
+      calculateGrandTotal();
+    }
+
+    searchBox.addEventListener("input", () => {
+      renderTables();
+    });
+
+    loadData();
+    renderTables();
+  </script>
 </body>
 </html>
