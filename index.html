@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>00-99 Multi Number Tracker</title>
+  <title>00-99 Shared Tracker</title>
 
   <style>
     body{
@@ -12,27 +12,29 @@
       padding:20px;
     }
     .container{
-      max-width: 1100px;
+      max-width:1400px;
       margin:auto;
-      background:white;
+      background:#fff;
       padding:20px;
       border-radius:14px;
       box-shadow:0 10px 20px rgba(0,0,0,0.15);
     }
     h2{text-align:center;}
-
     .topbar{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       margin:15px 0;
+      align-items:center;
     }
-    .topbar input{
-      flex:1;
+    input{
       padding:10px;
       border-radius:10px;
       border:1px solid #ccc;
-      min-width:250px;
+    }
+    #searchBox{
+      flex:1;
+      min-width:220px;
     }
     button{
       padding:10px 14px;
@@ -44,35 +46,36 @@
     }
     .blue{background:#007bff;}
     .blue:hover{background:#0056b3;}
-    .red{background:#dc3545;}
-    .red:hover{background:#a71d2a;}
     .green{background:#28a745;}
     .green:hover{background:#1f7a32;}
     .orange{background:#fd7e14;}
     .orange:hover{background:#c85f0e;}
+    .purple{background:#6f42c1;}
+    .purple:hover{background:#4e2d8a;}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+    }
 
     table{
       width:100%;
       border-collapse:collapse;
-      margin-top:10px;
+      font-size:13px;
     }
     th, td{
       border:1px solid #ddd;
-      padding:8px;
+      padding:6px;
       text-align:center;
     }
     th{background:#f8f8f8;}
 
     input.listInput{
-      width:95%;
-      padding:8px;
+      width:90%;
+      padding:6px;
       border-radius:8px;
       border:1px solid #ccc;
-      font-size:14px;
-    }
-
-    .lineTotal{
-      font-weight:bold;
     }
 
     .totalbox{
@@ -86,168 +89,316 @@
       text-align:center;
     }
 
-    .hint{
-      font-size:13px;
-      color:#555;
-      margin-top:5px;
+    .smallNote{
       text-align:center;
+      color:#555;
+      font-size:13px;
+      margin-top:5px;
+    }
+
+    .historyBox{
+      margin-top:20px;
+      background:#fafafa;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:10px;
+    }
+
+    .historyItem{
+      background:#fff;
+      border:1px solid #ccc;
+      border-radius:10px;
+      padding:8px;
+      margin-top:10px;
+      font-size:13px;
+      white-space:pre-wrap;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h2>✅ 00–99 Multi Number Add + Total Website</h2>
-    <div class="hint">Example: <b>00 = 12,34,54,23</b> (use comma or +)</div>
+<div class="container">
+  <h2>✅ 00–99 Shared Multi Number Tracker</h2>
 
-    <div class="topbar">
-      <input type="text" id="searchBox" placeholder="Search (example: 00 or 25)"/>
-      <button class="blue" onclick="saveData()">Save</button>
-      <button class="orange" onclick="exportData()">Export</button>
-      <button class="red" onclick="resetData()">Reset</button>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Index</th>
-          <th>Enter Numbers (comma separated)</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-
-    <div class="totalbox" id="grandTotalBox">Grand Total: 0</div>
+  <div class="topbar">
+    <button class="green" onclick="createRoom()">Create New Room</button>
+    <input id="roomInput" placeholder="Room Code (example: abc123)" />
+    <button class="blue" onclick="joinRoom()">Join Room</button>
+    <button class="orange" onclick="copyShareLink()">Copy Share Link</button>
   </div>
 
-  <script>
-    const tableBody = document.getElementById("tableBody");
-    const grandTotalBox = document.getElementById("grandTotalBox");
-    const searchBox = document.getElementById("searchBox");
+  <div class="smallNote">
+    ✅ Multi numbers example: <b>00 = 12,34,54,23</b> (or use +) |
+    Search: <b>00,23,34</b>
+  </div>
 
-    // store like: data["00"] = "12,34,54"
-    let data = {};
+  <div class="topbar">
+    <input type="text" id="searchBox" placeholder="Search: 00 OR 00,23,34"/>
+    <button class="purple" onclick="copyFullReport()">Copy Full Report</button>
+  </div>
 
-    function loadData(){
-      const saved = localStorage.getItem("multiNumberTracker");
-      if(saved){
-        data = JSON.parse(saved);
-      }
+  <div class="grid">
+    <div>
+      <h3 style="text-align:center;">00 – 49</h3>
+      <table>
+        <thead>
+          <tr><th>Index</th><th>Numbers</th><th>Total</th></tr>
+        </thead>
+        <tbody id="leftBody"></tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3 style="text-align:center;">50 – 99</h3>
+      <table>
+        <thead>
+          <tr><th>Index</th><th>Numbers</th><th>Total</th></tr>
+        </thead>
+        <tbody id="rightBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="totalbox" id="grandTotalBox">Grand Total: 0</div>
+
+  <div class="historyBox">
+    <h3>📌 History (Online)</h3>
+    <div id="historyList">Join a room to see history...</div>
+  </div>
+</div>
+
+<!-- ✅ Firebase (CDN) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, onSnapshot,
+    collection, addDoc, query, orderBy, limit, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+  // ✅ PASTE YOUR FIREBASE CONFIG HERE
+  const firebaseConfig = {
+    apiKey: "PASTE_HERE",
+    authDomain: "PASTE_HERE",
+    projectId: "PASTE_HERE",
+    storageBucket: "PASTE_HERE",
+    messagingSenderId: "PASTE_HERE",
+    appId: "PASTE_HERE"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const leftBody = document.getElementById("leftBody");
+  const rightBody = document.getElementById("rightBody");
+  const grandTotalBox = document.getElementById("grandTotalBox");
+  const searchBox = document.getElementById("searchBox");
+  const roomInput = document.getElementById("roomInput");
+  const historyList = document.getElementById("historyList");
+
+  let currentRoom = null;
+  let roomData = {}; // { "00": "12,34", ... }
+  let unsubRoom = null;
+
+  function makeRoomCode(){
+    return Math.random().toString(36).substring(2, 8);
+  }
+
+  function parseLineToNumbers(text){
+    if(!text) return [];
+    const cleaned = text.replace(/\+/g, ",");
+    const parts = cleaned.split(",").map(x=>x.trim()).filter(Boolean);
+    return parts.map(n=>parseInt(n)).filter(n=>!isNaN(n));
+  }
+
+  function lineTotal(text){
+    return parseLineToNumbers(text).reduce((a,b)=>a+b,0);
+  }
+
+  function calcGrandTotal(){
+    let total = 0;
+    for(let i=0;i<100;i++){
+      const key = String(i).padStart(2,"0");
+      total += lineTotal(roomData[key] || "");
     }
+    grandTotalBox.innerText = "Grand Total: " + total;
+    return total;
+  }
 
-    function saveData(){
-      localStorage.setItem("multiNumberTracker", JSON.stringify(data));
-      alert("✅ Saved Successfully!");
-    }
+  function parseSearchKeys(searchText){
+    if(!searchText.trim()) return null;
+    let parts = searchText.split(/[,|\s]+/).map(x=>x.trim()).filter(Boolean);
+    parts = parts.map(x=>x.padStart(2,"0")).filter(x=>/^\d{2}$/.test(x));
+    return [...new Set(parts)];
+  }
 
-    function resetData(){
-      if(!confirm("Reset all entries?")) return;
-      data = {};
-      localStorage.removeItem("multiNumberTracker");
-      renderTable();
-      alert("✅ Reset Done!");
-    }
+  function renderRow(key){
+    const tr = document.createElement("tr");
 
-    function parseLineToNumbers(text){
-      if(!text) return [];
+    const tdIndex = document.createElement("td");
+    tdIndex.innerText = key;
 
-      // Allow commas, plus, spaces
-      const cleaned = text.replace(/\+/g, ",");
-      const parts = cleaned.split(",").map(x => x.trim()).filter(x => x !== "");
+    const tdInput = document.createElement("td");
+    const input = document.createElement("input");
+    input.className = "listInput";
+    input.placeholder = "12,34,54,23";
+    input.value = roomData[key] || "";
 
-      // keep only valid numbers
-      const nums = parts.map(n => parseInt(n)).filter(n => !isNaN(n));
-      return nums;
-    }
+    const tdTotal = document.createElement("td");
+    tdTotal.style.fontWeight = "bold";
+    tdTotal.innerText = lineTotal(input.value);
 
-    function lineTotal(text){
-      const nums = parseLineToNumbers(text);
-      return nums.reduce((a,b)=>a+b,0);
-    }
-
-    function calculateGrandTotal(){
-      let total = 0;
-      for(let i=0; i<100; i++){
-        const key = String(i).padStart(2,"0");
-        total += lineTotal(data[key] || "");
-      }
-      grandTotalBox.innerText = "Grand Total: " + total;
-    }
-
-    function exportData(){
-      let txt = "";
-      let grand = 0;
-
-      for(let i=0; i<100; i++){
-        const key = String(i).padStart(2,"0");
-        const raw = (data[key] || "").trim();
-        if(raw){
-          const t = lineTotal(raw);
-          txt += `${key} = ${raw}  | Total = ${t}\n`;
-          grand += t;
-        }
-      }
-
-      txt += `\nGrand Total = ${grand}`;
-
-      const blob = new Blob([txt], {type:"text/plain"});
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "00-99-multi-data.txt";
-      link.click();
-    }
-
-    function renderTable(filter=""){
-      tableBody.innerHTML = "";
-
-      for(let i=0; i<100; i++){
-        const key = String(i).padStart(2,"0");
-
-        if(filter && !key.includes(filter)) continue;
-
-        const tr = document.createElement("tr");
-
-        const tdIndex = document.createElement("td");
-        tdIndex.innerText = key;
-
-        const tdInput = document.createElement("td");
-        const input = document.createElement("input");
-        input.className = "listInput";
-        input.placeholder = "Example: 12,34,54,23";
-        input.value = data[key] || "";
-
-        const tdTotal = document.createElement("td");
-        tdTotal.className = "lineTotal";
-        tdTotal.innerText = lineTotal(input.value);
-
-        input.addEventListener("input", () => {
-          data[key] = input.value;
-          tdTotal.innerText = lineTotal(input.value);
-          calculateGrandTotal();
-
-          // auto save always
-          localStorage.setItem("multiNumberTracker", JSON.stringify(data));
-        });
-
-        tdInput.appendChild(input);
-
-        tr.appendChild(tdIndex);
-        tr.appendChild(tdInput);
-        tr.appendChild(tdTotal);
-
-        tableBody.appendChild(tr);
-      }
-
-      calculateGrandTotal();
-    }
-
-    searchBox.addEventListener("input", () => {
-      renderTable(searchBox.value.trim());
+    input.addEventListener("input", async () => {
+      roomData[key] = input.value;
+      tdTotal.innerText = lineTotal(input.value);
+      calcGrandTotal();
+      await saveRoom(); // auto save online
     });
 
-    loadData();
-    renderTable();
-  </script>
+    tdInput.appendChild(input);
+
+    tr.appendChild(tdIndex);
+    tr.appendChild(tdInput);
+    tr.appendChild(tdTotal);
+
+    return tr;
+  }
+
+  function renderTables(){
+    leftBody.innerHTML = "";
+    rightBody.innerHTML = "";
+
+    const searchKeys = parseSearchKeys(searchBox.value);
+
+    for(let i=0;i<100;i++){
+      const key = String(i).padStart(2,"0");
+
+      if(searchKeys && !searchKeys.includes(key)) continue;
+
+      const row = renderRow(key);
+      if(i < 50) leftBody.appendChild(row);
+      else rightBody.appendChild(row);
+    }
+
+    calcGrandTotal();
+  }
+
+  async function saveRoom(){
+    if(!currentRoom) return;
+
+    const roomRef = doc(db, "rooms", currentRoom);
+    await setDoc(roomRef, {
+      data: roomData,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    // save history
+    const total = calcGrandTotal();
+    const historyRef = collection(db, "rooms", currentRoom, "history");
+    await addDoc(historyRef, {
+      time: new Date().toLocaleString(),
+      total: total
+    });
+  }
+
+  async function loadHistory(){
+    if(!currentRoom) return;
+
+    const q = query(
+      collection(db, "rooms", currentRoom, "history"),
+      orderBy("time", "desc"),
+      limit(10)
+    );
+
+    const snap = await getDocs(q);
+
+    let html = "";
+    snap.forEach(docu => {
+      const h = docu.data();
+      html += `<div class="historyItem">🕒 ${h.time}\nTotal: ${h.total}</div>`;
+    });
+
+    historyList.innerHTML = html || "No history yet.";
+  }
+
+  window.createRoom = async function(){
+    currentRoom = makeRoomCode();
+    roomInput.value = currentRoom;
+    roomData = {};
+    await saveRoom();
+    startListening();
+    alert("✅ Room created: " + currentRoom);
+  }
+
+  window.joinRoom = async function(){
+    const code = roomInput.value.trim();
+    if(!code){
+      alert("Enter room code!");
+      return;
+    }
+
+    currentRoom = code;
+    startListening();
+    alert("✅ Joined room: " + currentRoom);
+  }
+
+  function startListening(){
+    if(unsubRoom) unsubRoom();
+
+    const roomRef = doc(db, "rooms", currentRoom);
+
+    unsubRoom = onSnapshot(roomRef, (snap) => {
+      if(snap.exists()){
+        roomData = snap.data().data || {};
+      } else {
+        roomData = {};
+      }
+      renderTables();
+      loadHistory();
+    });
+  }
+
+  window.copyShareLink = async function(){
+    if(!currentRoom){
+      alert("Create or join a room first!");
+      return;
+    }
+    const link = `${location.origin}${location.pathname}#room=${currentRoom}`;
+    await navigator.clipboard.writeText(link);
+    alert("✅ Share link copied!");
+  }
+
+  window.copyFullReport = async function(){
+    let report = "";
+    let grand = 0;
+
+    for(let i=0;i<100;i++){
+      const key = String(i).padStart(2,"0");
+      const raw = (roomData[key] || "").trim();
+      if(raw){
+        const t = lineTotal(raw);
+        report += `${key} = ${raw} | Total = ${t}\n`;
+        grand += t;
+      }
+    }
+
+    report += `\nGrand Total = ${grand}`;
+    await navigator.clipboard.writeText(report);
+    alert("✅ Full report copied!");
+  }
+
+  searchBox.addEventListener("input", () => renderTables());
+
+  // ✅ Auto join if URL has room code
+  const hash = new URLSearchParams(location.hash.replace("#",""));
+  const roomFromUrl = hash.get("room");
+  if(roomFromUrl){
+    currentRoom = roomFromUrl;
+    roomInput.value = roomFromUrl;
+    startListening();
+  } else {
+    renderTables();
+  }
+</script>
+
 </body>
 </html>
