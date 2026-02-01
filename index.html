@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>00-99 Multi Number Tracker</title>
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#f2f2f2;
+      padding:20px;
+    }
+    .container{
+      max-width: 1100px;
+      margin:auto;
+      background:white;
+      padding:20px;
+      border-radius:14px;
+      box-shadow:0 10px 20px rgba(0,0,0,0.15);
+    }
+    h2{text-align:center;}
+
+    .topbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:15px 0;
+    }
+    .topbar input{
+      flex:1;
+      padding:10px;
+      border-radius:10px;
+      border:1px solid #ccc;
+      min-width:250px;
+    }
+    button{
+      padding:10px 14px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      color:white;
+      font-weight:bold;
+    }
+    .blue{background:#007bff;}
+    .blue:hover{background:#0056b3;}
+    .red{background:#dc3545;}
+    .red:hover{background:#a71d2a;}
+    .green{background:#28a745;}
+    .green:hover{background:#1f7a32;}
+    .orange{background:#fd7e14;}
+    .orange:hover{background:#c85f0e;}
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+    }
+    th, td{
+      border:1px solid #ddd;
+      padding:8px;
+      text-align:center;
+    }
+    th{background:#f8f8f8;}
+
+    input.listInput{
+      width:95%;
+      padding:8px;
+      border-radius:8px;
+      border:1px solid #ccc;
+      font-size:14px;
+    }
+
+    .lineTotal{
+      font-weight:bold;
+    }
+
+    .totalbox{
+      margin-top:15px;
+      padding:15px;
+      border-radius:12px;
+      background:#eaf7ea;
+      border:1px solid #b6e3b6;
+      font-size:20px;
+      font-weight:bold;
+      text-align:center;
+    }
+
+    .hint{
+      font-size:13px;
+      color:#555;
+      margin-top:5px;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>✅ 00–99 Multi Number Add + Total Website</h2>
+    <div class="hint">Example: <b>00 = 12,34,54,23</b> (use comma or +)</div>
+
+    <div class="topbar">
+      <input type="text" id="searchBox" placeholder="Search (example: 00 or 25)"/>
+      <button class="blue" onclick="saveData()">Save</button>
+      <button class="orange" onclick="exportData()">Export</button>
+      <button class="red" onclick="resetData()">Reset</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Enter Numbers (comma separated)</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <div class="totalbox" id="grandTotalBox">Grand Total: 0</div>
+  </div>
+
+  <script>
+    const tableBody = document.getElementById("tableBody");
+    const grandTotalBox = document.getElementById("grandTotalBox");
+    const searchBox = document.getElementById("searchBox");
+
+    // store like: data["00"] = "12,34,54"
+    let data = {};
+
+    function loadData(){
+      const saved = localStorage.getItem("multiNumberTracker");
+      if(saved){
+        data = JSON.parse(saved);
+      }
+    }
+
+    function saveData(){
+      localStorage.setItem("multiNumberTracker", JSON.stringify(data));
+      alert("✅ Saved Successfully!");
+    }
+
+    function resetData(){
+      if(!confirm("Reset all entries?")) return;
+      data = {};
+      localStorage.removeItem("multiNumberTracker");
+      renderTable();
+      alert("✅ Reset Done!");
+    }
+
+    function parseLineToNumbers(text){
+      if(!text) return [];
+
+      // Allow commas, plus, spaces
+      const cleaned = text.replace(/\+/g, ",");
+      const parts = cleaned.split(",").map(x => x.trim()).filter(x => x !== "");
+
+      // keep only valid numbers
+      const nums = parts.map(n => parseInt(n)).filter(n => !isNaN(n));
+      return nums;
+    }
+
+    function lineTotal(text){
+      const nums = parseLineToNumbers(text);
+      return nums.reduce((a,b)=>a+b,0);
+    }
+
+    function calculateGrandTotal(){
+      let total = 0;
+      for(let i=0; i<100; i++){
+        const key = String(i).padStart(2,"0");
+        total += lineTotal(data[key] || "");
+      }
+      grandTotalBox.innerText = "Grand Total: " + total;
+    }
+
+    function exportData(){
+      let txt = "";
+      let grand = 0;
+
+      for(let i=0; i<100; i++){
+        const key = String(i).padStart(2,"0");
+        const raw = (data[key] || "").trim();
+        if(raw){
+          const t = lineTotal(raw);
+          txt += `${key} = ${raw}  | Total = ${t}\n`;
+          grand += t;
+        }
+      }
+
+      txt += `\nGrand Total = ${grand}`;
+
+      const blob = new Blob([txt], {type:"text/plain"});
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "00-99-multi-data.txt";
+      link.click();
+    }
+
+    function renderTable(filter=""){
+      tableBody.innerHTML = "";
+
+      for(let i=0; i<100; i++){
+        const key = String(i).padStart(2,"0");
+
+        if(filter && !key.includes(filter)) continue;
+
+        const tr = document.createElement("tr");
+
+        const tdIndex = document.createElement("td");
+        tdIndex.innerText = key;
+
+        const tdInput = document.createElement("td");
+        const input = document.createElement("input");
+        input.className = "listInput";
+        input.placeholder = "Example: 12,34,54,23";
+        input.value = data[key] || "";
+
+        const tdTotal = document.createElement("td");
+        tdTotal.className = "lineTotal";
+        tdTotal.innerText = lineTotal(input.value);
+
+        input.addEventListener("input", () => {
+          data[key] = input.value;
+          tdTotal.innerText = lineTotal(input.value);
+          calculateGrandTotal();
+
+          // auto save always
+          localStorage.setItem("multiNumberTracker", JSON.stringify(data));
+        });
+
+        tdInput.appendChild(input);
+
+        tr.appendChild(tdIndex);
+        tr.appendChild(tdInput);
+        tr.appendChild(tdTotal);
+
+        tableBody.appendChild(tr);
+      }
+
+      calculateGrandTotal();
+    }
+
+    searchBox.addEventListener("input", () => {
+      renderTable(searchBox.value.trim());
+    });
+
+    loadData();
+    renderTable();
+  </script>
+</body>
+</html>
