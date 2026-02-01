@@ -96,6 +96,13 @@
       margin-top:5px;
     }
 
+    #saveStatus{
+      text-align:center;
+      font-weight:bold;
+      margin-top:8px;
+      color:#0a7;
+    }
+
     .historyBox{
       margin-top:20px;
       background:#fafafa;
@@ -126,13 +133,13 @@
     <button class="blue" onclick="joinRoom()">Join Room</button>
 
     <button class="green" onclick="saveRoomManual()">Save</button>
-
-    <!-- ✅ UPDATED BUTTON (works even in file:/// mode) -->
-    <button class="orange" onclick="copyShareLink()">Copy Room Code</button>
+    <button class="orange" onclick="copyRoomCode()">Copy Room Code</button>
   </div>
 
+  <div id="saveStatus"></div>
+
   <div class="smallNote">
-    ✅ Multi numbers example: <b>00 = 12,34,54,23</b> (or use +) |
+    ✅ Example: <b>00 = 12,34,54,23</b> (or use +) |
     Search: <b>00,23,34</b>
   </div>
 
@@ -175,7 +182,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import {
     getFirestore, doc, setDoc, onSnapshot,
-    collection, addDoc, query, orderBy, limit, getDocs
+    collection, addDoc, query, orderBy, limit, getDocs,
+    serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
   // ✅ PASTE YOUR FIREBASE CONFIG HERE
@@ -197,6 +205,7 @@
   const searchBox = document.getElementById("searchBox");
   const roomInput = document.getElementById("roomInput");
   const historyList = document.getElementById("historyList");
+  const saveStatus = document.getElementById("saveStatus");
 
   let currentRoom = null;
   let roomData = {};
@@ -250,11 +259,13 @@
     tdTotal.style.fontWeight = "bold";
     tdTotal.innerText = lineTotal(input.value);
 
-    input.addEventListener("input", async () => {
+    input.addEventListener("input", () => {
       roomData[key] = input.value;
       tdTotal.innerText = lineTotal(input.value);
       calcGrandTotal();
-      await saveRoom(false); // autosave no alert
+      // ✅ no autosave here (faster + safer)
+      saveStatus.innerText = "✏️ Edited (click Save)";
+      saveStatus.style.color = "#c85f0e";
     });
 
     tdInput.appendChild(input);
@@ -288,20 +299,25 @@
   async function saveRoom(showAlert=true){
     if(!currentRoom) return;
 
+    saveStatus.innerText = "💾 Saving...";
+    saveStatus.style.color = "#007bff";
+
     const roomRef = doc(db, "rooms", currentRoom);
 
     await setDoc(roomRef, {
       data: roomData,
-      updatedAt: new Date().toISOString()
+      updatedAt: serverTimestamp()
     }, { merge: true });
 
-    // history
     const total = calcGrandTotal();
     const historyRef = collection(db, "rooms", currentRoom, "history");
     await addDoc(historyRef, {
-      time: new Date().toLocaleString(),
+      createdAt: serverTimestamp(),
       total: total
     });
+
+    saveStatus.innerText = "✅ Saved!";
+    saveStatus.style.color = "#0a7";
 
     if(showAlert) alert("✅ Saved!");
     loadHistory();
@@ -312,7 +328,14 @@
       alert("Create or join a room first!");
       return;
     }
-    await saveRoom(true);
+    try{
+      await saveRoom(true);
+    } catch(err){
+      console.error(err);
+      saveStatus.innerText = "❌ Save failed! Check Firebase config / rules.";
+      saveStatus.style.color = "red";
+      alert("Save failed. Open Console (F12) to see error.");
+    }
   }
 
   async function loadHistory(){
@@ -320,7 +343,7 @@
 
     const q = query(
       collection(db, "rooms", currentRoom, "history"),
-      orderBy("time", "desc"),
+      orderBy("createdAt", "desc"),
       limit(10)
     );
 
@@ -329,7 +352,7 @@
     let html = "";
     snap.forEach(docu => {
       const h = docu.data();
-      html += `<div class="historyItem">🕒 ${h.time}\nTotal: ${h.total}</div>`;
+      html += `<div class="historyItem">Total: ${h.total}</div>`;
     });
 
     historyList.innerHTML = html || "No history yet.";
@@ -339,7 +362,6 @@
     currentRoom = makeRoomCode();
     roomInput.value = currentRoom;
     roomData = {};
-    await saveRoom(false);
     startListening();
     alert("✅ Room created: " + currentRoom);
   }
@@ -368,20 +390,18 @@
       }
       renderTables();
       loadHistory();
+      saveStatus.innerText = "✅ Loaded room: " + currentRoom;
+      saveStatus.style.color = "#0a7";
     });
   }
 
-  // ✅ UPDATED COPY FUNCTION (copies only room code)
-  window.copyShareLink = async function(){
+  window.copyRoomCode = async function(){
     if(!currentRoom){
       alert("Create or join a room first!");
       return;
     }
-
-    const textToCopy = `Room Code: ${currentRoom}`;
-
-    await navigator.clipboard.writeText(textToCopy);
-    alert("✅ Room Code copied! Send it to another device.");
+    await navigator.clipboard.writeText(`Room Code: ${currentRoom}`);
+    alert("✅ Room Code copied!");
   }
 
   window.copyFullReport = async function(){
@@ -405,10 +425,8 @@
 
   searchBox.addEventListener("input", () => renderTables());
 
-  // start empty
   renderTables();
 </script>
 
 </body>
 </html>
-
